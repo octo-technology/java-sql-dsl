@@ -1,0 +1,3 @@
+Java SQL DSL
+------------
+java-sql-dsl is a small DSL to generate SQL queries in Java.
