@@ -436,28 +436,6 @@ public class SelectQueryTest {
     assertEquals(42, params.get("column3"));
   }
 
-  // @SuppressWarnings("unchecked")
-  // @Test
-  // public void testShouldBuildSQLQueryWithMockFunctionInColumnNames() {
-  // final Evaluable<String> funcMock = createMock(JavaSQLFunc.Evaluable.class);
-  // expect(funcMock.eval("param", 1)).andReturn("1");
-  // expect(funcMock.eval("param2", 2)).andReturn("2");
-  // replay(funcMock);
-  // Query.addFuncEvaluator("myFunc", funcMock);
-  // final SelectQuery query = select(func("myFunc", "param", 1),
-  // func("myFunc", "param2", 2)) //
-  // .from("table") //
-  // .where("column").eq(42);
-  //
-  // assertEquals("SELECT 1,2 FROM table WHERE (column = :column1)", query
-  // .buildSQLQuery());
-  // verify(funcMock);
-  // final Map<String, Object> params = query.getParams();
-  // assertEquals(1, params.size());
-  // assertEquals(42, params.get("column1"));
-  // Query.clearFuncEvaluatorMap();
-  // }
-
   @Test
   public void testShouldBuildSQLQueryWithFunctionWithAliasInColumnNames()
       throws QueryException {
