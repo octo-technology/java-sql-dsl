@@ -32,6 +32,7 @@ import com.octo.java.sql.exp.Exp;
 import com.octo.java.sql.exp.ExpSeq;
 import com.octo.java.sql.exp.InExp;
 import com.octo.java.sql.exp.JoinClause;
+import com.octo.java.sql.exp.Nullable;
 import com.octo.java.sql.exp.OpExp;
 import com.octo.java.sql.exp.Operator;
 import com.octo.java.sql.exp.SQLFunc;
@@ -44,6 +45,7 @@ import com.octo.java.sql.query.UpdateQuery;
 import com.octo.java.sql.query.SelectQuery.Order;
 
 public class DefaultQueryBuilder extends BaseVisitor {
+  private static final String DEFAULT_BASE_VARIABLE_NAME = "param";
   private static final String OPEN_BRACKET = "(";
   private static final String BETWEEN = "BETWEEN";
   private static final String CLOSE_BRACKET = ")";
@@ -133,7 +135,11 @@ public class DefaultQueryBuilder extends BaseVisitor {
 
     result.append(OPEN_BRACKET);
     acceptOrVisitValue(exp.getLhsValue(), baseVariableName);
-    result.append(" ").append(exp.getOperator().getValue()).append(" ");
+    if ((exp.getRhsValue() instanceof Nullable)
+        && ((Nullable) exp.getRhsValue()).isNull())
+      result.append(" ").append(Operator.IS.getValue()).append(" ");
+    else
+      result.append(" ").append(exp.getOperator().getValue()).append(" ");
     acceptOrVisitValue(exp.getRhsValue(), baseVariableName);
     result.append(CLOSE_BRACKET);
   }
@@ -221,6 +227,8 @@ public class DefaultQueryBuilder extends BaseVisitor {
   }
 
   public void visitValue(final Object value) {
+    final String variableName = addVariable(value, DEFAULT_BASE_VARIABLE_NAME);
+    result.append(":").append(variableName);
   }
 
   public void visit(final Constant constant) {
@@ -338,5 +346,12 @@ public class DefaultQueryBuilder extends BaseVisitor {
     final Exp whereClause = deleteQuery.getWhereClause();
     if ((whereClause != null) && (whereClause.isValid()))
       buildWhereClause(whereClause);
+  }
+
+  public void accept(final Nullable nullable) {
+    if (nullable.isNull())
+      Constant.NULL.accept(this);
+    else
+      acceptOrVisitValue(nullable.getValue());
   }
 }

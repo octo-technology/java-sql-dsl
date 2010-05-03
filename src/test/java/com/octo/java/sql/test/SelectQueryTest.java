@@ -175,6 +175,27 @@ public class SelectQueryTest {
   }
 
   @Test
+  public void testShouldBuildSQLQueryWithOneWhereEqClauseAndANullableNullValue()
+      throws QueryException {
+    final SelectQuery query = select("*").from("table") //
+        .where(c("column")).eqNullable(null);
+
+    assertEquals("SELECT * FROM table WHERE (column IS NULL)", query.toSql());
+    assertEquals(0, query.getParams().size());
+  }
+
+  @Test
+  public void testShouldBuildSQLQueryWithOneWhereEqClauseAndANullableNotNullValue()
+      throws QueryException {
+    final SelectQuery query = select("*").from("table") //
+        .where(c("column")).eqNullable(42);
+
+    assertEquals("SELECT * FROM table WHERE (column = :param1)", query.toSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(42, query.getParams().get("param1"));
+  }
+
+  @Test
   public void testShouldBuildSQLQueryWithMoreThanOneWhereClauseSimplified()
       throws QueryException {
     final SelectQuery query = select("*").from("table") //

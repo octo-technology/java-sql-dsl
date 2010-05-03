@@ -22,6 +22,7 @@ import com.octo.java.sql.exp.Constant;
 import com.octo.java.sql.exp.ExpSeq;
 import com.octo.java.sql.exp.InExp;
 import com.octo.java.sql.exp.JoinClause;
+import com.octo.java.sql.exp.Nullable;
 import com.octo.java.sql.exp.OpExp;
 import com.octo.java.sql.exp.SQLFunc;
 import com.octo.java.sql.exp.SetClause;
@@ -58,4 +59,6 @@ public interface QueryVisitor {
   public void visit(InsertQuery insertQuery);
 
   public void visit(DeleteQuery deleteQuery);
+
+  public void accept(Nullable nullable);
 }

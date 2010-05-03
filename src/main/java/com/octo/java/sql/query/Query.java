@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import com.octo.java.sql.exp.Column;
 import com.octo.java.sql.exp.Exp;
 import com.octo.java.sql.exp.JavaSQLFunc;
+import com.octo.java.sql.exp.Nullable;
 import com.octo.java.sql.exp.OpExp;
 import com.octo.java.sql.exp.Operator;
 import com.octo.java.sql.exp.SQLFunc;
@@ -219,9 +220,23 @@ public abstract class Query<T extends Query<T>> implements Visitable {
   }
 
   @SuppressWarnings("unchecked")
+  public T eqNullable(final Object value) throws QueryGrammarException {
+    assertWhereClauseIsInitialized("eq");
+    whereClause = whereClause.eq(new Nullable(value));
+    return (T) this;
+  }
+
+  @SuppressWarnings("unchecked")
   public T neq(final Object value) throws QueryGrammarException {
     assertWhereClauseIsInitialized("neq");
     whereClause = whereClause.neq(value);
+    return (T) this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public T neqNullable(final Object value) throws QueryGrammarException {
+    assertWhereClauseIsInitialized("neq");
+    whereClause = whereClause.neq(new Nullable(value));
     return (T) this;
   }
 

@@ -157,5 +157,4 @@ public class SelectQuery extends Query<SelectQuery> {
   public List<SelectQuery> getUnions() {
     return unions;
   }
-
 }
