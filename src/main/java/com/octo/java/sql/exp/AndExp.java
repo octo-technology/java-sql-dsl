@@ -14,40 +14,15 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+package com.octo.java.sql.exp;
 
-public class Column {
-  private final String name;
-
-  Column(final String name) {
-    this.name = name;
-  }
-
-  public String getName() {
-    return name;
+public class AndExp extends ExpSeq {
+  AndExp(final Exp... clauses) {
+    super(clauses);
   }
 
   @Override
-  public int hashCode() {
-    return name.hashCode();
-  }
-
-  @Override
-  public boolean equals(final Object obj) {
-    if (this == obj)
-      return true;
-    if (!(obj instanceof Column))
-      return false;
-
-    final Column otherObj = (Column) obj;
-    if (name == null)
-      return otherObj.getName() == null;
-    else
-      return name.equals(otherObj.getName());
-  }
-
-  @Override
-  public String toString() {
-    return name;
+  public Operator getOperator() {
+    return Operator.AND;
   }
 }

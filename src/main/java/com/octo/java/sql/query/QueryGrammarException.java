@@ -14,27 +14,12 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+package com.octo.java.sql.query;
 
-import java.util.Map;
+public class QueryGrammarException extends QueryException {
+  private static final long serialVersionUID = 562421290186643510L;
 
-public class SetClause extends QueryPart {
-  private final Exp exp;
-
-  public SetClause(final String colName, final Object value) {
-    super();
-    exp = new ComparisonExp(colName, "=", value, false, true);
+  public QueryGrammarException(final String message) {
+    super(message);
   }
-
-  @Override
-  public StringBuilder buildSQLQuery(final StringBuilder result)
-      throws QueryGrammarException {
-    return this.exp.buildSQLQuery(result);
-  }
-
-  @Override
-  public Map<String, Object> getParams(final Map<String, Object> result) {
-    return this.exp.getParams(result);
-  }
-
 }

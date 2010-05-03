@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+package com.octo.java.sql.query;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import com.octo.java.sql.QueryPart.Operator;
+import com.octo.java.sql.exp.Column;
+import com.octo.java.sql.exp.Exp;
+import com.octo.java.sql.exp.JavaSQLFunc;
+import com.octo.java.sql.exp.OpExp;
+import com.octo.java.sql.exp.Operator;
+import com.octo.java.sql.exp.SQLFunc;
+import com.octo.java.sql.query.visitor.DefaultQueryBuilder;
+import com.octo.java.sql.query.visitor.QueryVisitor;
+import com.octo.java.sql.query.visitor.Visitable;
 
-public abstract class Query<T extends Query<T>> {
+public abstract class Query<T extends Query<T>> implements Visitable {
   /**
    * Logger for this class
    */
@@ -36,6 +46,20 @@ public abstract class Query<T extends Query<T>> {
   private static Map<String, JavaSQLFunc.Evaluable<String>> funcEvaluatorMap = new HashMap<String, JavaSQLFunc.Evaluable<String>>();
 
   protected Exp whereClause;
+
+  private static Class<? extends DefaultQueryBuilder> querybuilderClass = DefaultQueryBuilder.class;
+
+  private static Set<QueryVisitor> visitors = new HashSet<QueryVisitor>();
+  private DefaultQueryBuilder builder;
+
+  public static void setDefaultQueryBuilder(
+      final Class<? extends DefaultQueryBuilder> queryBuilderClass) {
+    querybuilderClass = queryBuilderClass;
+  }
+
+  public Exp getWhereClause() {
+    return whereClause;
+  }
 
   /**
    * @param columns
@@ -66,24 +90,13 @@ public abstract class Query<T extends Query<T>> {
   }
 
   /**
-   * Create a CALL Query
+   * Create an DELETE Query
    * 
-   * @param procedure
+   * @param table
    * @return
    */
-  public static CallQuery call(final String procedure) {
-    return new CallQuery(procedure);
-  }
-
-  /**
-   * Create a CALL Query with parameters
-   * 
-   * @param procedure
-   * @param params
-   * @return
-   */
-  public static CallQuery call(final String procedure, final Object... params) {
-    return new CallQuery(procedure, params);
+  public static DeleteQuery deleteFrom(final String table) {
+    return new DeleteQuery(table);
   }
 
   /**
@@ -93,7 +106,7 @@ public abstract class Query<T extends Query<T>> {
    * @param params
    * @return
    */
-  public static SQLFunc func(final String funcName, final Object... params) {
+  public static SQLFunc f(final String funcName, final Object... params) {
     if (funcEvaluatorMap.containsKey(funcName)) {
       final JavaSQLFunc.Evaluable<String> evaluator = funcEvaluatorMap
           .get(funcName);
@@ -109,150 +122,120 @@ public abstract class Query<T extends Query<T>> {
    * @param name
    * @return
    */
-  public static Column col(final String name) {
+  public static Column c(final String name) {
     return new Column(name);
   }
 
   /**
-   * Add WHERE clause to SQL query being built
+   * Create a new OpExp
    * 
-   * @param result
-   * @throws QueryGrammarException
+   * @param columnName
+   * @return
    */
-  protected void buildWhereClause(final StringBuilder result)
-      throws QueryGrammarException {
-    if ((whereClause != null) && (whereClause.isValid())) {
-      result.append(" WHERE ");
-      whereClause.buildSQLQuery(result);
-    }
+  public static OpExp e(final Column columnName) {
+    return new OpExp(columnName);
   }
 
-  /**
-   * Add WHERE clause parameters to given result map
-   * 
-   * @param result
-   */
-  protected void getWhereParams(final Map<String, Object> result) {
-    if ((whereClause != null) && (whereClause.isValid())) {
-      whereClause.getParams(result);
-    }
+  public static OpExp e(final SQLFunc func) {
+    return new OpExp(func);
   }
 
-  public String buildSQLQuery() throws QueryGrammarException {
-    final StringBuilder result = new StringBuilder();
-    QueryPart.resetVariableIndex();
+  public String toSql() throws QueryException {
+    return toSql(getQueryBuilder());
+  }
 
-    buildSQLQuery(result);
-
-    final String sqlQuery = result.toString();
-    if (logger.isDebugEnabled()) {
+  public String toSql(final DefaultQueryBuilder queryBuilder)
+      throws QueryException {
+    runVisitors();
+    builder = queryBuilder;
+    accept(builder);
+    final String sqlQuery = builder.getResult().toString();
+    if (logger.isDebugEnabled())
       logger.debug("buildSQLQuery() - String sqlQuery=" + sqlQuery);
-    }
     return sqlQuery;
   }
 
-  public abstract StringBuilder buildSQLQuery(final StringBuilder result)
-      throws QueryGrammarException;
+  public DefaultQueryBuilder getQueryBuilder() throws QueryException {
+    try {
+      return querybuilderClass.newInstance();
+    } catch (final InstantiationException e) {
+      throw new QueryException("Cannot instanciate query builder "
+          + querybuilderClass);
+    } catch (final IllegalAccessException e) {
+      throw new QueryException("Cannot instanciate query builder "
+          + querybuilderClass);
+    }
+  }
 
-  public abstract Map<String, Object> getParams();
+  private void runVisitors() {
+    for (final QueryVisitor visitor : visitors) {
+      accept(visitor);
+    }
+  }
 
-  public abstract Map<String, Object> getParams(final Map<String, Object> result);
+  public Map<String, Object> getParams() {
+    return builder.getParams();
+  }
+
+  public static void addVisitor(final QueryVisitor visitor) {
+    visitors.add(visitor);
+  }
+
+  public static void clearVisitors() {
+    visitors.clear();
+  }
 
   @SuppressWarnings("unchecked")
-  public T where(final String columnName) {
-    whereClause = new ComparisonExp(columnName);
+  public T where(final Column column) {
+    whereClause = new OpExp(column);
     return (T) this;
   }
 
   @SuppressWarnings("unchecked")
   public T where(final Exp newWhereClause) {
-    this.whereClause = newWhereClause;
+    whereClause = newWhereClause;
     return (T) this;
   }
 
-  public T where(final String columnName, final String operator,
-      final Object value) {
-    return where(columnName, operator, value, false);
-  }
-
   @SuppressWarnings("unchecked")
-  public T where(final String columnName, final String operator,
-      final Object value, final boolean valueIsColumnName) {
-
-    if (value != null) {
-      whereClause = new ComparisonExp(columnName, operator, value,
-          valueIsColumnName, false);
-    }
+  public T where(final Column column, final Operator operator,
+      final Object value) {
+    if (value != null)
+      whereClause = new OpExp(column, operator, value);
     return (T) this;
   }
 
   @SuppressWarnings("unchecked")
   public T where(final SQLFunc func) {
-    whereClause = new ComparisonExp(func);
+    whereClause = new OpExp(func);
     return (T) this;
   }
 
+  @SuppressWarnings("unchecked")
   public T eq(final Object value) throws QueryGrammarException {
-    return eq(value, false);
-  }
-
-  public T eq(final Query<?> nestedQuery) throws QueryGrammarException {
-    return eq(nestedQuery, true);
-  }
-
-  @SuppressWarnings("unchecked")
-  public T eq(final Object value, final boolean valueIsColumnName)
-      throws QueryGrammarException {
     assertWhereClauseIsInitialized("eq");
-    whereClause.eq(value, valueIsColumnName);
+    whereClause = whereClause.eq(value);
     return (T) this;
   }
 
+  @SuppressWarnings("unchecked")
   public T neq(final Object value) throws QueryGrammarException {
-    return neq(value, false);
-  }
-
-  public T neq(final Query<?> nestedQuery) throws QueryGrammarException {
-    return neq(nestedQuery, true);
-  }
-
-  @SuppressWarnings("unchecked")
-  public T neq(final Object value, final boolean valueIsColumnName)
-      throws QueryGrammarException {
     assertWhereClauseIsInitialized("neq");
-    whereClause.neq(value, valueIsColumnName);
-    return (T) this;
-  }
-
-  public T diff(final Object value) throws QueryGrammarException {
-    return diff(value, false);
-  }
-
-  public T diff(final Query<?> nestedQuery) throws QueryGrammarException {
-    return diff(nestedQuery, true);
-  }
-
-  @SuppressWarnings("unchecked")
-  public T diff(final Object value, final boolean valueIsColumnName)
-      throws QueryGrammarException {
-    assertWhereClauseIsInitialized("diff");
-    whereClause.diff(value, valueIsColumnName);
+    whereClause = whereClause.neq(value);
     return (T) this;
   }
 
   @SuppressWarnings("unchecked")
-  public T geq(final Long value, final boolean valueIsColumnName)
-      throws QueryGrammarException {
+  public T geq(final Long value) throws QueryGrammarException {
     assertWhereClauseIsInitialized("geq");
-    whereClause.geq(value, valueIsColumnName);
+    whereClause = whereClause.geq(value);
     return (T) this;
   }
 
   @SuppressWarnings("unchecked")
-  public T leq(final Long value, final boolean valueIsColumnName)
-      throws QueryGrammarException {
+  public T leq(final Long value) throws QueryGrammarException {
     assertWhereClauseIsInitialized("leq");
-    whereClause.leq(value, valueIsColumnName);
+    whereClause = whereClause.leq(value);
     return (T) this;
   }
 
@@ -278,9 +261,9 @@ public abstract class Query<T extends Query<T>> {
   }
 
   @SuppressWarnings("unchecked")
-  public T and(final String columnName) throws QueryGrammarException {
+  public T and(final Column column) throws QueryGrammarException {
     assertWhereClauseIsInitialized("and");
-    whereClause = whereClause.and(columnName);
+    whereClause = whereClause.and(column);
     return (T) this;
   }
 
@@ -301,14 +284,14 @@ public abstract class Query<T extends Query<T>> {
   @SuppressWarnings("unchecked")
   public T isNull() throws QueryGrammarException {
     assertWhereClauseIsInitialized("isNull");
-    whereClause.isNull();
+    whereClause = whereClause.isNull();
     return (T) this;
   }
 
   @SuppressWarnings("unchecked")
   public T isNotNull() throws QueryGrammarException {
     assertWhereClauseIsInitialized("isNotNull");
-    whereClause.isNotNull();
+    whereClause = whereClause.isNotNull();
     return (T) this;
   }
 
@@ -323,7 +306,7 @@ public abstract class Query<T extends Query<T>> {
   @SuppressWarnings("unchecked")
   public T betweenOrOp(final Operator op, final Object valueStart,
       final Object valueEnd) throws QueryGrammarException {
-    assertWhereClauseIsInitialized(op == null ? null : op.value);
+    assertWhereClauseIsInitialized(op == null ? null : op.getValue());
     whereClause = whereClause.betweenOrOp(op, valueStart, valueEnd);
     return (T) this;
   }
@@ -339,8 +322,8 @@ public abstract class Query<T extends Query<T>> {
   @SuppressWarnings("unchecked")
   public T op(final Operator op, final Object value)
       throws QueryGrammarException {
-    assertWhereClauseIsInitialized(op == null ? null : op.value);
-    whereClause = whereClause.applyOperation(op, value, false);
+    assertWhereClauseIsInitialized(op == null ? null : op.getValue());
+    whereClause = whereClause.applyOperation(op, value);
     return (T) this;
   }
 

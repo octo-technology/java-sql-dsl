@@ -14,25 +14,14 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
-
-import static org.apache.commons.lang.StringUtils.join;
-
-import java.util.Map;
+package com.octo.java.sql.query;
 
 import org.apache.commons.collections.map.ListOrderedMap;
-import org.apache.log4j.Logger;
+
+import com.octo.java.sql.query.visitor.QueryVisitor;
 
 public class InsertQuery extends Query<InsertQuery> {
-  /**
-   * Logger for this class
-   */
-  private static final Logger logger = Logger.getLogger(InsertQuery.class);
-
-  private static final String INSERT = "INSERT INTO";
-
   private final ListOrderedMap columnsValues = new ListOrderedMap();
-
   private final String table;
 
   /**
@@ -42,44 +31,6 @@ public class InsertQuery extends Query<InsertQuery> {
    */
   InsertQuery(final String table) {
     this.table = table;
-  }
-
-  @Override
-  public StringBuilder buildSQLQuery(final StringBuilder result) {
-    result.append(INSERT).append(" ");
-    result.append(table);
-    result.append(" (");
-    result.append(join(columnsValues.keyList(), ", "));
-    result.append(") VALUES (");
-    boolean firstClause = true;
-    for (final Object column : columnsValues.keyList()) {
-      if (firstClause) {
-        firstClause = false;
-      } else {
-        result.append(", ");
-      }
-      result.append(":").append(column);
-    }
-    result.append(")");
-
-    return result;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public Map<String, Object> getParams() {
-    if (logger.isDebugEnabled()) {
-      logger
-          .debug("getParams() - ListOrderedMap columnsValues=" + columnsValues); //$NON-NLS-1$
-    }
-    return columnsValues;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public Map<String, Object> getParams(final Map<String, Object> result) {
-    result.putAll(columnsValues);
-    return result;
   }
 
   public InsertQuery set(final String column, final Object value)
@@ -97,6 +48,18 @@ public class InsertQuery extends Query<InsertQuery> {
       return set(column, defaultValueIfNull);
     else
       return set(column, value);
+  }
+
+  public void accept(final QueryVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  public ListOrderedMap getColumnsValues() {
+    return columnsValues;
+  }
+
+  public String getTable() {
+    return table;
   }
 
 }

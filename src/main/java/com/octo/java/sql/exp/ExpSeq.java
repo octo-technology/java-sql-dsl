@@ -14,48 +14,20 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+package com.octo.java.sql.exp;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+
+import com.octo.java.sql.query.QueryGrammarException;
+import com.octo.java.sql.query.visitor.QueryVisitor;
 
 public abstract class ExpSeq extends Exp {
   protected final List<Exp> clauses;
 
-  public ExpSeq(final Exp... clauses) {
+  ExpSeq(final Exp... clauses) {
     super();
     this.clauses = Arrays.asList(clauses);
-  }
-
-  @Override
-  public StringBuilder buildSQLQuery(final StringBuilder result)
-      throws QueryGrammarException {
-    result.append(OPEN_BRACKET);
-    final String operator = getOperator();
-    boolean firstClause = true;
-    for (final Exp clause : clauses) {
-      if (clause.isValid()) {
-        if (firstClause) {
-          firstClause = false;
-        } else {
-          result.append(" ").append(operator).append(" ");
-        }
-        clause.buildSQLQuery(result);
-      }
-    }
-    result.append(CLOSE_BRACKET);
-    return result;
-  }
-
-  @Override
-  public Map<String, Object> getParams(final Map<String, Object> result) {
-    for (final Exp clause : clauses) {
-      if (clause.isValid()) {
-        clause.getParams(result);
-      }
-    }
-    return result;
   }
 
   @Override
@@ -68,10 +40,11 @@ public abstract class ExpSeq extends Exp {
   }
 
   @Override
-  public Exp applyOperation(final String operator, final Object value,
-      final boolean valueIsColumnName) throws QueryGrammarException {
-    final Exp lastClause = clauses.get(clauses.size() - 1);
-    lastClause.applyOperation(operator, value, valueIsColumnName);
+  public Exp applyOperation(final Operator operator, final Object value)
+      throws QueryGrammarException {
+    final int lastIndex = clauses.size() - 1;
+    final Exp lastClause = clauses.get(lastIndex);
+    clauses.set(lastIndex, lastClause.applyOperation(operator, value));
     return this;
   }
 
@@ -103,5 +76,13 @@ public abstract class ExpSeq extends Exp {
     return this;
   }
 
-  public abstract String getOperator();
+  public void accept(final QueryVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  public abstract Operator getOperator();
+
+  public List<Exp> getClauses() {
+    return clauses;
+  }
 }

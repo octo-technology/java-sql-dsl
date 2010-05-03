@@ -14,12 +14,31 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+package com.octo.java.sql.exp;
 
-public class QueryGrammarException extends Exception {
-  private static final long serialVersionUID = 562421290186643510L;
+import com.octo.java.sql.query.visitor.QueryVisitor;
+import com.octo.java.sql.query.visitor.Visitable;
 
-  public QueryGrammarException(final String message) {
-    super(message);
+public class SetClause implements Visitable {
+  private final Column column;
+  private final Object value;
+
+  public SetClause(final Column column, final Object value) {
+    super();
+    this.column = column;
+    this.value = value;
   }
+
+  public void accept(final QueryVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  public Column getColumn() {
+    return column;
+  }
+
+  public Object getValue() {
+    return value;
+  }
+
 }

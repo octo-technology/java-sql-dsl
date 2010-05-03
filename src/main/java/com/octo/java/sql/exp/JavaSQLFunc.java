@@ -14,17 +14,27 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+/**
+ * 
+ */
+package com.octo.java.sql.exp;
 
-public class AndExp extends ExpSeq {
-  private static final String AND_OPERATOR = "AND";
 
-  public AndExp(final Exp... clauses) {
-    super(clauses);
+public class JavaSQLFunc extends SQLFunc {
+  public interface Evaluable<T> {
+    T eval(Object... params);
   }
 
-  @Override
-  public String getOperator() {
-    return AND_OPERATOR;
+  private final Evaluable<String> evaluator;
+
+  public JavaSQLFunc(final String funcName, final Object[] params,
+      final Evaluable<String> evaluator) {
+    super(funcName);
+    this.params = params;
+    this.evaluator = evaluator;
+  }
+
+  public Evaluable<String> getEvaluator() {
+    return evaluator;
   }
 }

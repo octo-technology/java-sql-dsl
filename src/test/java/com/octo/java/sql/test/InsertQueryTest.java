@@ -14,57 +14,60 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+package com.octo.java.sql.test;
 
-import static com.octo.java.sql.Query.insertInto;
+import static com.octo.java.sql.query.Query.insertInto;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Map;
 
 import org.junit.Test;
 
+import com.octo.java.sql.query.InsertQuery;
+import com.octo.java.sql.query.QueryException;
+
 public class InsertQueryTest {
   @Test
-  public void testShouldBuildInsertSQLQuery() throws QueryGrammarException {
+  public void testShouldBuildInsertSQLQuery() throws QueryException {
     final InsertQuery query = insertInto("table").set("column1", 42).set(
         "column2", "value2");
 
     assertEquals(
-        "INSERT INTO table (column1, column2) VALUES (:column1, :column2)",
-        query.buildSQLQuery());
+        "INSERT INTO table (column1, column2) VALUES (:column11, :column22)",
+        query.toSql());
     final Map<String, Object> params = query.getParams();
     assertEquals(2, params.size());
-    assertEquals(42, params.get("column1"));
-    assertEquals("value2", params.get("column2"));
+    assertEquals(42, params.get("column11"));
+    assertEquals("value2", params.get("column22"));
   }
 
   @Test
   public void testShouldBuildInsertSQLQueryInvertedColumns()
-      throws QueryGrammarException {
+      throws QueryException {
     final InsertQuery query = insertInto("table").set("column2", "value2").set(
         "column1", 42);
 
     assertEquals(
-        "INSERT INTO table (column2, column1) VALUES (:column2, :column1)",
-        query.buildSQLQuery());
+        "INSERT INTO table (column2, column1) VALUES (:column21, :column12)",
+        query.toSql());
     final Map<String, Object> params = query.getParams();
     assertEquals(2, params.size());
-    assertEquals(42, params.get("column1"));
-    assertEquals("value2", params.get("column2"));
+    assertEquals(42, params.get("column12"));
+    assertEquals("value2", params.get("column21"));
   }
 
   @Test
   public void testShouldBuildInsertSQLQueryWithDefaultValue()
-      throws QueryGrammarException {
+      throws QueryException {
     final InsertQuery query = insertInto("table").set("column1", null, "").set(
         "column2", null);
 
     assertEquals(
-        "INSERT INTO table (column1, column2) VALUES (:column1, :column2)",
-        query.buildSQLQuery());
+        "INSERT INTO table (column1, column2) VALUES (:column11, :column22)",
+        query.toSql());
     final Map<String, Object> params = query.getParams();
     assertEquals(2, params.size());
-    assertEquals("", params.get("column1"));
-    assertEquals(null, params.get("column2"));
+    assertEquals("", params.get("column11"));
+    assertEquals(null, params.get("column22"));
   }
 }

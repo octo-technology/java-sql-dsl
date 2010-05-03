@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+package com.octo.java.sql.exp;
 
-import java.util.Map;
+import com.octo.java.sql.query.QueryGrammarException;
+import com.octo.java.sql.query.visitor.QueryVisitor;
 
 public class BetweenExp extends Exp {
-  private static final String BETWEEN = "BETWEEN";
-  private final String columnName;
+  private final Column column;
   private final Object valueStart;
-  private String valueStartName = null;
   private final Object valueEnd;
-  private String valueEndName = null;
 
-  public BetweenExp(final String columnName, final Object valueStart,
-      final Object valueEnd) {
+  BetweenExp(final Column column, final Object valueStart, final Object valueEnd) {
     super();
-    this.columnName = columnName;
+    this.column = column;
     this.valueStart = valueStart;
     this.valueEnd = valueEnd;
   }
@@ -38,19 +35,19 @@ public class BetweenExp extends Exp {
   public Exp applyInOperation(final Object... newValues)
       throws QueryGrammarException {
     throw new QueryGrammarException(
-        "Cannot apply BETWENN operation on an IN expression.");
+        "Cannot apply IN operation on an BETWEEN expression.");
   }
 
   @Override
   public Exp applyNotInOperation(final Object... values)
       throws QueryGrammarException {
     throw new QueryGrammarException(
-        "Cannot apply BETWENN operation on an NOT IN expression.");
+        "Cannot apply NOT IN operation on an BETWEEN expression.");
   }
 
   @Override
-  public Exp applyOperation(final String operator, final Object value,
-      final boolean valueIsColumnName) throws QueryGrammarException {
+  public Exp applyOperation(final Operator operator, final Object value)
+      throws QueryGrammarException {
     throw new QueryGrammarException("Cannot apply " + operator
         + " operation on an BETWEEN expression.");
   }
@@ -63,29 +60,23 @@ public class BetweenExp extends Exp {
   }
 
   @Override
-  public StringBuilder buildSQLQuery(final StringBuilder result) {
-
-    valueStartName = getVariableName(columnName);
-    valueEndName = getVariableName(columnName);
-
-    result.append(OPEN_BRACKET);
-    result.append(columnName).append(" ").append(BETWEEN).append(" ");
-    result.append(":").append(valueStartName);
-    result.append(" and ");
-    result.append(":").append(valueEndName);
-    return result.append(CLOSE_BRACKET);
-  }
-
-  @Override
-  public Map<String, Object> getParams(final Map<String, Object> result) {
-    result.put(valueStartName, valueStart);
-    result.put(valueEndName, valueEnd);
-    return result;
-  }
-
-  @Override
   public boolean isValid() {
     return ((valueStart != null) && (valueEnd != null));
   }
 
+  public void accept(final QueryVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  public Column getColumn() {
+    return column;
+  }
+
+  public Object getValueStart() {
+    return valueStart;
+  }
+
+  public Object getValueEnd() {
+    return valueEnd;
+  }
 }

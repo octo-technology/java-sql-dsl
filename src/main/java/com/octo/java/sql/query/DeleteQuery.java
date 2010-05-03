@@ -14,17 +14,27 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+package com.octo.java.sql.query;
 
-public class OrExp extends ExpSeq {
-  private static final String OR_OPERATOR = "OR";
+import com.octo.java.sql.query.visitor.QueryVisitor;
 
-  public OrExp(final Exp... clauses) {
-    super(clauses);
+public class DeleteQuery extends Query<DeleteQuery> {
+  private final String[] tables;
+
+  /**
+   * Constructor can only be called by factory methods in Query class
+   * 
+   * @param tables
+   */
+  DeleteQuery(final String... tables) {
+    this.tables = tables;
   }
 
-  @Override
-  public String getOperator() {
-    return OR_OPERATOR;
+  public void accept(final QueryVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  public String[] getTables() {
+    return tables;
   }
 }

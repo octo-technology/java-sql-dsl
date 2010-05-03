@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql;
+package com.octo.java.sql.exp;
 
-import java.util.Map;
+import com.octo.java.sql.query.QueryGrammarException;
+import com.octo.java.sql.query.SelectQuery;
+import com.octo.java.sql.query.visitor.QueryVisitor;
+import com.octo.java.sql.query.visitor.Visitable;
 
-public class JoinClause extends QueryPart {
-  private static final String ON = "ON";
-
-  public enum JoinType {
-    LEFT_OUTER_JOIN("LEFT OUTER JOIN"), RIGHT_OUTER_JOIN("RIGHT OUTER JOIN"), LEFT_INNER_JOIN(
-        "LEFT INNER JOIN"), RIGHT_INNER_JOIN("RIGHT INNER JOIN");
+public class JoinClause implements Visitable {
+  public static enum JoinType {
+    LEFT_OUTER_JOIN("LEFT OUTER JOIN"), RIGHT_OUTER_JOIN("RIGHT OUTER JOIN"), INNER_JOIN(
+        "INNER JOIN");
 
     public final String value;
 
@@ -45,23 +46,9 @@ public class JoinClause extends QueryPart {
     this.query = query;
   }
 
-  @Override
-  public StringBuilder buildSQLQuery(final StringBuilder result)
-      throws QueryGrammarException {
-    result.append(" ").append(joinType.value).append(" ").append(table);
-    result.append(" ").append(ON).append(" ");
-    return onClause.buildSQLQuery(result);
-  }
-
-  @Override
-  public Map<String, Object> getParams(final Map<String, Object> result) {
-    return onClause.getParams(result);
-  }
-
-  public SelectQuery on(final String columnName, final String operator,
-      final Object value, final boolean valueIsColumnName) {
-    onClause = new ComparisonExp(columnName, operator, value,
-        valueIsColumnName, false);
+  public SelectQuery on(final Column column, final Operator operator,
+      final Object value) {
+    onClause = new OpExp(column, operator, value);
     return query;
   }
 
@@ -70,19 +57,14 @@ public class JoinClause extends QueryPart {
     return query;
   }
 
-  public JoinClause on(final String columnName) {
-    onClause = new ComparisonExp(columnName);
+  public JoinClause on(final Column column) {
+    onClause = new OpExp(column);
     return this;
   }
 
-  public SelectQuery eq(final String value) throws QueryGrammarException {
-    return eq(value, true);
-  }
-
-  public SelectQuery eq(final Object value, final boolean valueIsColumnName)
-      throws QueryGrammarException {
+  public SelectQuery eq(final Object value) throws QueryGrammarException {
     assertOnClauseIsInitialized("eq");
-    onClause.eq(value, valueIsColumnName);
+    onClause = onClause.eq(value);
     return query;
   }
 
@@ -91,5 +73,21 @@ public class JoinClause extends QueryPart {
     if (onClause == null)
       throw new QueryGrammarException("Cannot apply '" + operation
           + "' operation without an initialized join clause.");
+  }
+
+  public void accept(final QueryVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  public Exp getOnClause() {
+    return onClause;
+  }
+
+  public JoinType getType() {
+    return joinType;
+  }
+
+  public String getTable() {
+    return table;
   }
 }
