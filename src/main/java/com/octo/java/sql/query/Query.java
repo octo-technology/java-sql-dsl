@@ -58,6 +58,10 @@ public abstract class Query<T extends Query<T>> implements Visitable {
     querybuilderClass = queryBuilderClass;
   }
 
+  public static void resetDefaultQueryBuilder() {
+    querybuilderClass = DefaultQueryBuilder.class;
+  }
+
   public Exp getWhereClause() {
     return whereClause;
   }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql.test;
+package com.octo.java.sql;
 
 import static com.octo.java.sql.query.Query.c;
 import static com.octo.java.sql.query.Query.e;
@@ -28,7 +28,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Map;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.octo.java.sql.exp.JavaSQLFunc;
@@ -39,15 +38,9 @@ import com.octo.java.sql.query.Query;
 import com.octo.java.sql.query.QueryException;
 import com.octo.java.sql.query.QueryGrammarException;
 import com.octo.java.sql.query.SelectQuery;
-import com.octo.java.sql.query.visitor.DefaultQueryBuilder;
 import com.octo.java.sql.query.visitor.OracleQueryBuilder;
 
 public class SelectQueryTest {
-  @Before
-  public void setUp() {
-    SelectQuery.setDefaultQueryBuilder(DefaultQueryBuilder.class);
-  }
-
   @Test
   public void testShouldBuildSQLQueryWithoutWhereClause() throws QueryException {
     final SelectQuery query = select("*").from("table");
@@ -149,7 +142,7 @@ public class SelectQueryTest {
   public void testShouldBuildSQLQueryWithNestedInExp() throws QueryException {
     final SelectQuery query = select("*").from("table") //
         .where(c("column")) //
-        .in(select("columnIn").from("tableIn").where(c("columnIn")).eq(2));
+        .in(select(c("columnIn")).from("tableIn").where(c("columnIn")).eq(2));
 
     assertEquals(
         "SELECT * FROM table WHERE (column IN ((SELECT columnIn FROM tableIn WHERE (columnIn = :columnIn1))))",
@@ -472,9 +465,9 @@ public class SelectQueryTest {
   @Test
   public void testShouldBuildSQLQueryWithColNameAndFunctionInColumnNames()
       throws QueryException {
-    final SelectQuery query = select("col1", //
+    final SelectQuery query = select(c("col1"), //
         f("myFunc", c("colparam"), 2), //
-        "col3", //
+        c("col3"), //
         f("mySecondFunc", "param2", 22)) //
         .from("table") //
         .where(c("column")).eq(42);
@@ -606,7 +599,7 @@ public class SelectQueryTest {
         .from("table") //
         .where(c("col")).eq("val") //
         .union(//
-            select("col1", "NULL col2") //
+            select(c("col1"), c("NULL col2")) //
                 .from("otherTable") //
                 .where(c("col1")).eq("val1") //
         );

@@ -267,17 +267,19 @@ public class DefaultQueryBuilder extends BaseVisitor {
         firstColumn = false;
       else
         result.append(",");
-      if (column instanceof Visitable)
-        ((Visitable) column).accept(this);
-      else
-        result.append(column);
+      acceptOrVisitValue(column);
+      // if (column instanceof Visitable)
+      // ((Visitable) column).accept(this);
+      // else
+      // result.append(column);
     }
 
     result.append(" ").append(FROM).append(" ");
     result.append(join(query.getTables(), ','));
 
     for (final JoinClause clause : query.getJoinClauses())
-      clause.accept(this);
+      if (clause.isValid())
+        clause.accept(this);
 
     if (!isEmpty(query.getAlias())) {
       result.append(" ");

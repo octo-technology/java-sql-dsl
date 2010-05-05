@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql.test;
+package com.octo.java.sql;
 
 import static com.octo.java.sql.query.Query.c;
 import static com.octo.java.sql.query.Query.select;
 import static org.junit.Assert.assertEquals;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,6 +32,11 @@ public class OracleSelectQueryTest {
   @Before
   public void setUp() {
     SelectQuery.setDefaultQueryBuilder(OracleQueryBuilder.class);
+  }
+
+  @After
+  public void tearDown() {
+    SelectQuery.resetDefaultQueryBuilder();
   }
 
   @Test

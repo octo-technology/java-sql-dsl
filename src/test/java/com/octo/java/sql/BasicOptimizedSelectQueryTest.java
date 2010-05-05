@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql.test;
+package com.octo.java.sql;
 
 import static com.octo.java.sql.query.Query.c;
 import static com.octo.java.sql.query.Query.select;
@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Map;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,6 +34,11 @@ public class BasicOptimizedSelectQueryTest {
   @Before
   public void setUp() {
     SelectQuery.addVisitor(new BasicQueryOptimizer());
+  }
+
+  @After
+  public void tearDown() {
+    SelectQuery.clearVisitors();
   }
 
   @Test
@@ -143,5 +149,96 @@ public class BasicOptimizedSelectQueryTest {
     final Map<String, Object> params = query.getParams();
     assertEquals(1, params.size());
     assertEquals("value", params.get("column1"));
+  }
+
+  @Test
+  public void testShouldBuildSQLQueryWithoutUnnecessaryJoin()
+      throws QueryException {
+    final SelectQuery query = select(c("table.column"), c("table.column2")) //
+        .from("table") //
+        .innerJoin("table2").on(c("table2.column2")).eq(c("table.column")) //
+        .where(c("table.column")).eq(42);
+
+    assertEquals(
+        "SELECT table.column,table.column2 FROM table WHERE (table.column = :table.column1)",
+        query.toSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(42, query.getParams().get("table.column1"));
+  }
+
+  @Test
+  public void testShouldBuildSQLQueryWithNecessaryJoinColumnUsedIsSelected()
+      throws QueryException {
+    final SelectQuery query = select(c("table2.column2"), c("table.column2")) //
+        .from("table") //
+        .innerJoin("table2").on(c("table2.column2")).eq(c("table.column")) //
+        .where(c("table.column")).eq(42);
+
+    assertEquals(
+        "SELECT table2.column2,table.column2 FROM table INNER JOIN table2 ON (table2.column2 = table.column) WHERE (table.column = :table.column1)",
+        query.toSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(42, query.getParams().get("table.column1"));
+  }
+
+  @Test
+  public void testShouldBuildSQLQueryWithNecessaryJoinAllColumnsAreSelected()
+      throws QueryException {
+    final SelectQuery query = select("*") //
+        .from("table") //
+        .innerJoin("table2").on(c("table2.column2")).eq(c("table.column")) //
+        .where(c("table.column")).eq(42);
+
+    assertEquals(
+        "SELECT * FROM table INNER JOIN table2 ON (table2.column2 = table.column) WHERE (table.column = :table.column1)",
+        query.toSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(42, query.getParams().get("table.column1"));
+  }
+
+  @Test
+  public void testShouldBuildSQLQueryWithNecessaryJoinWhenColumnNameIsAmbiguous()
+      throws QueryException {
+    final SelectQuery query = select(c("table2.column2"), c("table.column2")) //
+        .from("table") //
+        .innerJoin("table2").on(c("table2.column2")).eq(c("table.column")) //
+        .where(c("column")).eq(42);
+
+    assertEquals(
+        "SELECT table2.column2,table.column2 FROM table INNER JOIN table2 ON (table2.column2 = table.column) WHERE (column = :column1)",
+        query.toSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(42, query.getParams().get("column1"));
+  }
+
+  @Test
+  public void testShouldBuildSQLQueryWithNecessaryJoinWhenDependingOnAnotherNecessaryJoin()
+      throws QueryException {
+    final SelectQuery query = select(c("table3.column3"), c("table.column2")) //
+        .from("table") //
+        .innerJoin("table2").on(c("table2.column2")).eq(c("table.column2")) //
+        .innerJoin("table3").on(c("table3.column3")).eq(c("table2.column3")) //
+        .where(c("column")).eq(42);
+
+    assertEquals(
+        "SELECT table3.column3,table.column2 FROM table INNER JOIN table2 ON (table2.column2 = table.column2) INNER JOIN table3 ON (table3.column3 = table2.column3) WHERE (column = :column1)",
+        query.toSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(42, query.getParams().get("column1"));
+  }
+
+  @Test
+  public void testShouldBuildSQLQueryWithoutUnnecessaryJoinWhenDependingOnAnotherUnnecessaryJoin()
+      throws QueryException {
+    final SelectQuery query = select(c("table.column2")) //
+        .from("table") //
+        .innerJoin("table2").on(c("table2.column2")).eq(c("table.column2")) //
+        .innerJoin("table3").on(c("table3.column3")).eq(c("table2.column3")) //
+        .where(c("column")).eq(42);
+
+    assertEquals("SELECT table.column2 FROM table WHERE (column = :column1)",
+        query.toSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(42, query.getParams().get("column1"));
   }
 }

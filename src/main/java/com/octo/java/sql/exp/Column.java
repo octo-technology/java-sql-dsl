@@ -57,4 +57,11 @@ public class Column implements Visitable {
   public void accept(final QueryVisitor visitor) {
     visitor.visit(this);
   }
+
+  public String getTableName() {
+    if (name.indexOf(".") > 0)
+      return name.split("\\.")[0];
+    else
+      return null;
+  }
 }

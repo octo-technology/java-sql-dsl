@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.octo.java.sql.exp;
 
-import com.octo.java.sql.query.visitor.QueryVisitor;
-import com.octo.java.sql.query.visitor.Visitable;
+import static org.junit.Assert.assertEquals;
 
-public enum Constant implements Visitable {
-  NULL("NULL"), STAR("*");
+import org.junit.Test;
 
-  private final String value;
+public class ColumnTest {
 
-  Constant(final String value) {
-    this.value = value;
+  @Test
+  public void testShouldGetTableNameFromColumnWithTableName() {
+    assertEquals("table", new Column("table.col").getTableName());
   }
 
-  public String getValue() {
-    return value;
+  @Test
+  public void testShouldGetNullFromColumnWithoutTableName() {
+    assertEquals(null, new Column("col").getTableName());
   }
 
-  public void accept(final QueryVisitor visitor) {
-    visitor.visit(this);
+  @Test
+  public void testShouldGetNullFromColumnWithEmptyTableName() {
+    assertEquals(null, new Column(".col").getTableName());
   }
 }

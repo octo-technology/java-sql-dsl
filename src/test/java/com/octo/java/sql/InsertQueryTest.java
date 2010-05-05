@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql.test;
+package com.octo.java.sql;
 
 import static com.octo.java.sql.query.Query.insertInto;
 import static org.junit.Assert.assertEquals;

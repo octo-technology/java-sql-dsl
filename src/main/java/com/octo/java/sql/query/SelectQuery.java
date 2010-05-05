@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.octo.java.sql.exp.Constant;
 import com.octo.java.sql.exp.JoinClause;
 import com.octo.java.sql.query.visitor.QueryVisitor;
 
@@ -49,7 +50,11 @@ public class SelectQuery extends Query<SelectQuery> {
    *          to put both SQLFunc & Colsname
    */
   SelectQuery(final Object... columns) {
-    this.columns = columns;
+    if ((columns != null) && (columns.length == 1)
+        && Constant.STAR.getValue().equals(columns[0]))
+      this.columns = new Object[] { Constant.STAR };
+    else
+      this.columns = columns;
   }
 
   public SelectQuery from(final String... newTables) {

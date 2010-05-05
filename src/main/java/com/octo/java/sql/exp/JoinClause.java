@@ -38,6 +38,7 @@ public class JoinClause implements Visitable {
   private final JoinType joinType;
   private Exp onClause;
   private final SelectQuery query;
+  private boolean valid = true;
 
   public JoinClause(final String table, final JoinType joinType,
       final SelectQuery query) {
@@ -90,5 +91,13 @@ public class JoinClause implements Visitable {
 
   public String getTable() {
     return table;
+  }
+
+  public boolean isValid() {
+    return valid;
+  }
+
+  public void invalidate() {
+    valid = false;
   }
 }

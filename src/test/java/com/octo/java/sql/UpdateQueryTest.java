@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.octo.java.sql.test;
+package com.octo.java.sql;
 
 import static com.octo.java.sql.query.Query.c;
+import static com.octo.java.sql.query.Query.f;
 import static com.octo.java.sql.query.Query.select;
 import static com.octo.java.sql.query.Query.update;
 import static org.junit.Assert.assertEquals;
@@ -75,7 +76,7 @@ public class UpdateQueryTest {
         .set(c("secondCol"), "v2") //
         .where(c("thirdCol")).like("%1%") //
         .and(c("col4")).eq( //
-            select("MAX(colnum)").from("otherTable") //
+            select(f("MAX", c("colnum"))).from("otherTable") //
                 .where(c("otherCol")).eq(42) //
         );
 
