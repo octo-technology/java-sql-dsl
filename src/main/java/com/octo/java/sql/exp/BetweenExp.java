@@ -16,6 +16,7 @@
 
 package com.octo.java.sql.exp;
 
+import com.octo.java.sql.query.QueryException;
 import com.octo.java.sql.query.QueryGrammarException;
 import com.octo.java.sql.query.visitor.QueryVisitor;
 
@@ -59,12 +60,7 @@ public class BetweenExp extends Exp {
         "Cannot apply BETWEEN on a BETWEEN expression.");
   }
 
-  @Override
-  public boolean isValid() {
-    return ((valueStart != null) && (valueEnd != null));
-  }
-
-  public void accept(final QueryVisitor visitor) {
+  public void accept(final QueryVisitor visitor) throws QueryException {
     visitor.visit(this);
   }
 

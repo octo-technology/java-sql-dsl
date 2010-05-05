@@ -32,17 +32,20 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.octo.java.sql.exp.JavaSQLFunc;
+import com.octo.java.sql.exp.Nullable;
 import com.octo.java.sql.exp.Operator;
 import com.octo.java.sql.exp.JavaSQLFunc.Evaluable;
 import com.octo.java.sql.query.Query;
 import com.octo.java.sql.query.QueryException;
+import com.octo.java.sql.query.QueryGrammarException;
 import com.octo.java.sql.query.SelectQuery;
+import com.octo.java.sql.query.visitor.DefaultQueryBuilder;
 import com.octo.java.sql.query.visitor.OracleQueryBuilder;
 
 public class SelectQueryTest {
   @Before
   public void setUp() {
-    SelectQuery.setDefaultQueryBuilder(OracleQueryBuilder.class);
+    SelectQuery.setDefaultQueryBuilder(DefaultQueryBuilder.class);
   }
 
   @Test
@@ -88,8 +91,7 @@ public class SelectQueryTest {
   public void testShouldBuildSQLQueryWithLimit() throws QueryException {
     final SelectQuery query = select("*").from("table").limit(10L);
 
-    assertEquals("SELECT * FROM (SELECT * FROM table) WHERE (rownum<=:limit1)",
-        query.toSql());
+    assertEquals("SELECT * FROM table LIMIT :limit1", query.toSql());
     assertEquals(1, query.getParams().size());
     assertEquals(10L, query.getParams().get("limit1"));
   }
@@ -100,8 +102,7 @@ public class SelectQueryTest {
     final SelectQuery query = select("*").from("table") //
         .where(c("column")).eq("columnValue").limit(10L);
 
-    assertEquals(
-        "SELECT * FROM (SELECT * FROM table WHERE (column = :column1)) WHERE (rownum<=:limit2)",
+    assertEquals("SELECT * FROM table WHERE (column = :column1) LIMIT :limit2",
         query.toSql());
     assertEquals(2, query.getParams().size());
     assertEquals("columnValue", query.getParams().get("column1"));
@@ -119,6 +120,15 @@ public class SelectQueryTest {
     assertEquals(2, query.getParams().size());
     assertEquals("columnValue1", query.getParams().get("column1"));
     assertEquals("columnValue2", query.getParams().get("column2"));
+  }
+
+  @Test(expected = QueryGrammarException.class)
+  public void testShouldBuildSQLQueryWithOneWhereInClauseAndANullValue()
+      throws QueryException {
+    final SelectQuery query = select("*").from("table") //
+        .where(c("column")).in((Object[]) null);
+
+    query.toSql();
   }
 
   @Test
@@ -170,7 +180,7 @@ public class SelectQueryTest {
     final SelectQuery query = select("*").from("table") //
         .where(c("column")).eq(null);
 
-    assertEquals("SELECT * FROM table", query.toSql());
+    assertEquals("SELECT * FROM table WHERE (column IS NULL)", query.toSql());
     assertEquals(0, query.getParams().size());
   }
 
@@ -190,9 +200,9 @@ public class SelectQueryTest {
     final SelectQuery query = select("*").from("table") //
         .where(c("column")).eqNullable(42);
 
-    assertEquals("SELECT * FROM table WHERE (column = :param1)", query.toSql());
+    assertEquals("SELECT * FROM table WHERE (column = :column1)", query.toSql());
     assertEquals(1, query.getParams().size());
-    assertEquals(42, query.getParams().get("param1"));
+    assertEquals(new Nullable(42), query.getParams().get("column1"));
   }
 
   @Test
@@ -218,7 +228,8 @@ public class SelectQueryTest {
         .and(c("otherColumn")).eq(null) //
         .and(c("lastColumn")).eq("lastColumnValue");
 
-    assertEquals("SELECT * FROM table WHERE ((lastColumn = :lastColumn1))",
+    assertEquals(
+        "SELECT * FROM table WHERE (((column IS NULL) AND (otherColumn IS NULL)) AND (lastColumn = :lastColumn1))",
         query.toSql());
     assertEquals(1, query.getParams().size());
     assertEquals("lastColumnValue", query.getParams().get("lastColumn1"));
@@ -340,23 +351,21 @@ public class SelectQueryTest {
     assertEquals("str%", query.getParams().get("column1"));
   }
 
-  @Test
+  @Test(expected = QueryGrammarException.class)
   public void testShouldBuildSQLQueryStartWithNullExp() throws QueryException {
     final SelectQuery query = select("*").from("table") //
         .where(c("column")).startWith(null);
 
-    assertEquals("SELECT * FROM table", query.toSql());
-    assertEquals(0, query.getParams().size());
+    query.toSql();
   }
 
-  @Test
+  @Test(expected = QueryGrammarException.class)
   public void testShouldBuildSQLQueryStartWithEmptyString()
       throws QueryException {
     final SelectQuery query = select("*").from("table") //
         .where(c("column")).startWith("");
 
-    assertEquals("SELECT * FROM table", query.toSql());
-    assertEquals(0, query.getParams().size());
+    query.toSql();
   }
 
   @Test
@@ -370,24 +379,22 @@ public class SelectQueryTest {
     assertEquals("%str%", query.getParams().get("column1"));
   }
 
-  @Test
+  @Test(expected = QueryGrammarException.class)
   public void testShouldBuildSQLQueryWithContainsWithNull()
       throws QueryException {
     final SelectQuery query = select("*").from("table") //
         .where(c("column")).contains(null);
 
-    assertEquals("SELECT * FROM table", query.toSql());
-    assertEquals(0, query.getParams().size());
+    query.toSql();
   }
 
-  @Test
+  @Test(expected = QueryGrammarException.class)
   public void testShouldBuildSQLQueryWithContainsWithEmptyString()
       throws QueryException {
     final SelectQuery query = select("*").from("table") //
         .where(c("column")).contains("");
 
-    assertEquals("SELECT * FROM table", query.toSql());
-    assertEquals(0, query.getParams().size());
+    query.toSql();
   }
 
   @Test
@@ -417,7 +424,16 @@ public class SelectQueryTest {
     assertEquals("valueStart", params.get("column1"));
     assertEquals("valueEnd", params.get("column2"));
     assertEquals("value", params.get("column3"));
+  }
 
+  @Test(expected = QueryGrammarException.class)
+  public void testShouldBuildSQLQueryWithoutBetweenSignWhenValuesAreNull()
+      throws QueryException {
+    final SelectQuery query = select("*").from("table") //
+        .where(c("column")).between(null, null) //
+        .and(c("column")).eq("value");
+
+    query.toSql();
   }
 
   @Test

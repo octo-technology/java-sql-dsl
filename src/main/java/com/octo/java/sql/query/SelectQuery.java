@@ -126,7 +126,7 @@ public class SelectQuery extends Query<SelectQuery> {
     return this;
   }
 
-  public void accept(final QueryVisitor visitor) {
+  public void accept(final QueryVisitor visitor) throws QueryException {
     visitor.visit(this);
   }
 

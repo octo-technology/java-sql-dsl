@@ -168,7 +168,7 @@ public abstract class Query<T extends Query<T>> implements Visitable {
     }
   }
 
-  private void runVisitors() {
+  private void runVisitors() throws QueryException {
     for (final QueryVisitor visitor : visitors) {
       accept(visitor);
     }

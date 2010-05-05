@@ -17,6 +17,7 @@
 package com.octo.java.sql.query.visitor;
 
 import static org.apache.commons.collections.CollectionUtils.isEmpty;
+import static org.apache.commons.lang.ArrayUtils.isEmpty;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang.StringUtils.join;
 
@@ -40,6 +41,8 @@ import com.octo.java.sql.exp.SetClause;
 import com.octo.java.sql.exp.JavaSQLFunc.Evaluable;
 import com.octo.java.sql.query.DeleteQuery;
 import com.octo.java.sql.query.InsertQuery;
+import com.octo.java.sql.query.QueryException;
+import com.octo.java.sql.query.QueryGrammarException;
 import com.octo.java.sql.query.SelectQuery;
 import com.octo.java.sql.query.UpdateQuery;
 import com.octo.java.sql.query.SelectQuery.Order;
@@ -102,7 +105,8 @@ public class DefaultQueryBuilder extends BaseVisitor {
       return defaultName;
   }
 
-  private void acceptOrVisitValue(final Object value, final String baseName) {
+  private void acceptOrVisitValue(final Object value, final String baseName)
+      throws QueryException {
     if (value instanceof Visitable)
       ((Visitable) value).accept(this);
     else {
@@ -111,14 +115,16 @@ public class DefaultQueryBuilder extends BaseVisitor {
     }
   }
 
-  protected void buildWhereClause(final Exp whereClause) {
-    result.append(" ").append(WHERE).append(" ");
-    whereClause.accept(this);
+  protected void buildWhereClause(final Exp whereClause) throws QueryException {
+    if (whereClause.isValid()) {
+      result.append(" ").append(WHERE).append(" ");
+      whereClause.accept(this);
+    }
   }
 
   protected void buildLimitClause(final SelectQuery query) {
-    result.append("LIMIT");
-    result.append(addVariable(query.getLimit(), "limit"));
+    result.append(" ").append("LIMIT").append(" ");
+    result.append(":").append(addVariable(query.getLimit(), "limit"));
   }
 
   /**
@@ -128,24 +134,34 @@ public class DefaultQueryBuilder extends BaseVisitor {
     result.append(column.getName());
   }
 
-  public void visit(final OpExp exp) {
+  public void visit(final OpExp exp) throws QueryException {
     String baseVariableName = getVariableName(exp.getLhsValue(), null);
     if (baseVariableName == null)
       baseVariableName = getVariableName(exp.getRhsValue(), "var");
 
     result.append(OPEN_BRACKET);
     acceptOrVisitValue(exp.getLhsValue(), baseVariableName);
-    if ((exp.getRhsValue() instanceof Nullable)
-        && ((Nullable) exp.getRhsValue()).isNull())
-      result.append(" ").append(Operator.IS.getValue()).append(" ");
-    else
+    if ((exp.getRhsValue() == null) //
+        || ((exp.getRhsValue() instanceof Nullable) //
+        && ((Nullable) exp.getRhsValue()).isNull())) {
+      if (!Operator.EQ.equals(exp.getOperator()))
+        throw new QueryGrammarException("Cannot use NULL value with operator "
+            + exp.getOperator().getValue());
+      result.append(" ").append(Operator.IS.getValue());
+      result.append(" ").append(Constant.NULL);
+    } else {
       result.append(" ").append(exp.getOperator().getValue()).append(" ");
-    acceptOrVisitValue(exp.getRhsValue(), baseVariableName);
+      acceptOrVisitValue(exp.getRhsValue(), baseVariableName);
+    }
     result.append(CLOSE_BRACKET);
   }
 
-  public void visit(final BetweenExp betweenExp) {
+  public void visit(final BetweenExp betweenExp) throws QueryException {
     final Column column = betweenExp.getColumn();
+    if ((betweenExp.getValueStart() == null)
+        || (betweenExp.getValueEnd() == null))
+      throw new QueryGrammarException(
+          "Cannot apply BETWEEN with one NULL value");
 
     result.append(OPEN_BRACKET);
     visit(column);
@@ -156,7 +172,7 @@ public class DefaultQueryBuilder extends BaseVisitor {
     result.append(CLOSE_BRACKET);
   }
 
-  public void visit(final ExpSeq expSeq) {
+  public void visit(final ExpSeq expSeq) throws QueryException {
     result.append(OPEN_BRACKET);
     final Operator operator = expSeq.getOperator();
     boolean firstClause = true;
@@ -172,7 +188,10 @@ public class DefaultQueryBuilder extends BaseVisitor {
     result.append(CLOSE_BRACKET);
   }
 
-  public void visit(final InExp inExp) {
+  public void visit(final InExp inExp) throws QueryException {
+    if (isEmpty(inExp.getValues()))
+      throw new QueryGrammarException("IN values cannot be empty or null");
+
     result.append(OPEN_BRACKET);
     inExp.getColumn().accept(this);
     result.append(" ");
@@ -191,21 +210,21 @@ public class DefaultQueryBuilder extends BaseVisitor {
     result.append(CLOSE_BRACKET);
   }
 
-  public void visit(final JoinClause joinClause) {
+  public void visit(final JoinClause joinClause) throws QueryException {
     result.append(" ").append(joinClause.getType().value).append(" ");
     result.append(joinClause.getTable());
     result.append(" ").append(ON).append(" ");
     joinClause.getOnClause().accept(this);
   }
 
-  public void visit(final SetClause setClause) {
+  public void visit(final SetClause setClause) throws QueryException {
     final Column column = setClause.getColumn();
     column.accept(this);
     result.append(" ").append(Operator.EQ.getValue()).append(" ");
     acceptOrVisitValue(setClause.getValue(), column.getName());
   }
 
-  public void visit(final SQLFunc sqlFunc) {
+  public void visit(final SQLFunc sqlFunc) throws QueryException {
     final String functionName = sqlFunc.getName();
     if (functions.containsKey(functionName)) {
       final Evaluable<?> functionPlaceHolder = functions.get(functionName);
@@ -235,7 +254,7 @@ public class DefaultQueryBuilder extends BaseVisitor {
     result.append(constant.getValue());
   }
 
-  public void visit(final SelectQuery query) {
+  public void visit(final SelectQuery query) throws QueryException {
     final boolean innerQuery = addBracketToNextSelectQuery;
     if (innerQuery)
       result.append(OPEN_BRACKET);
@@ -297,7 +316,7 @@ public class DefaultQueryBuilder extends BaseVisitor {
       result.append(CLOSE_BRACKET);
   }
 
-  public void visit(final UpdateQuery updateQuery) {
+  public void visit(final UpdateQuery updateQuery) throws QueryException {
     addBracketToNextSelectQuery = true;
     result.append(UPDATE).append(" ");
     result.append(updateQuery.getTable());
@@ -317,7 +336,7 @@ public class DefaultQueryBuilder extends BaseVisitor {
       buildWhereClause(whereClause);
   }
 
-  public void visit(final InsertQuery insertQuery) {
+  public void visit(final InsertQuery insertQuery) throws QueryException {
     addBracketToNextSelectQuery = true;
     result.append(INSERT).append(" ");
     result.append(insertQuery.getTable()).append(" ");
@@ -338,7 +357,7 @@ public class DefaultQueryBuilder extends BaseVisitor {
     result.append(CLOSE_BRACKET);
   }
 
-  public void visit(final DeleteQuery deleteQuery) {
+  public void visit(final DeleteQuery deleteQuery) throws QueryException {
     addBracketToNextSelectQuery = true;
     result.append(DELETE_FROM).append(" ");
     result.append(join(deleteQuery.getTables(), ','));
@@ -346,12 +365,5 @@ public class DefaultQueryBuilder extends BaseVisitor {
     final Exp whereClause = deleteQuery.getWhereClause();
     if ((whereClause != null) && (whereClause.isValid()))
       buildWhereClause(whereClause);
-  }
-
-  public void accept(final Nullable nullable) {
-    if (nullable.isNull())
-      Constant.NULL.accept(this);
-    else
-      acceptOrVisitValue(nullable.getValue());
   }
 }

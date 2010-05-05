@@ -16,8 +16,7 @@
 
 package com.octo.java.sql.exp;
 
-import org.apache.commons.lang.StringUtils;
-
+import com.octo.java.sql.query.QueryException;
 import com.octo.java.sql.query.QueryGrammarException;
 import com.octo.java.sql.query.visitor.QueryVisitor;
 
@@ -41,17 +40,18 @@ public class OpExp extends Exp {
     this.operator = operator;
   }
 
-  @Override
-  public boolean isValid() {
-    // Under Oracle, an empty string is considered to be null
-    // So it's not possible to be equal to an empty string since it's not
-    // possible to have one in db
-    // So to be coherent, we skip the parameter also when the string is empty
-    if (rhsValue instanceof String) {
-      return StringUtils.isNotEmpty((String) rhsValue);
-    }
-    return rhsValue != null;
-  }
+  //
+  // @Override
+  // public boolean isValid() {
+  // // Under Oracle, an empty string is considered to be null
+  // // So it's not possible to be equal to an empty string since it's not
+  // // possible to have one in db
+  // // So to be coherent, we skip the parameter also when the string is empty
+  // if (rhsValue instanceof String) {
+  // return StringUtils.isNotEmpty((String) rhsValue);
+  // }
+  // return rhsValue != null;
+  // }
 
   @Override
   public Exp applyOperation(final Operator newOperator, final Object newRhsValue)
@@ -90,7 +90,7 @@ public class OpExp extends Exp {
     return new BetweenExp((Column) lhsValue, valueStart, valueEnd);
   }
 
-  public void accept(final QueryVisitor visitor) {
+  public void accept(final QueryVisitor visitor) throws QueryException {
     visitor.visit(this);
   }
 

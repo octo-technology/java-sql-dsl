@@ -22,43 +22,41 @@ import com.octo.java.sql.exp.Constant;
 import com.octo.java.sql.exp.ExpSeq;
 import com.octo.java.sql.exp.InExp;
 import com.octo.java.sql.exp.JoinClause;
-import com.octo.java.sql.exp.Nullable;
 import com.octo.java.sql.exp.OpExp;
 import com.octo.java.sql.exp.SQLFunc;
 import com.octo.java.sql.exp.SetClause;
 import com.octo.java.sql.query.DeleteQuery;
 import com.octo.java.sql.query.InsertQuery;
+import com.octo.java.sql.query.QueryException;
 import com.octo.java.sql.query.SelectQuery;
 import com.octo.java.sql.query.UpdateQuery;
 
 public interface QueryVisitor {
   public void visit(Column column);
 
-  public void visit(OpExp exp);
+  public void visit(OpExp exp) throws QueryException;
 
-  public void visit(BetweenExp betweenExp);
+  public void visit(BetweenExp betweenExp) throws QueryException;
 
   public void visitValue(Object value);
 
-  public void visit(ExpSeq expSeq);
+  public void visit(ExpSeq expSeq) throws QueryException;
 
-  public void visit(InExp inExp);
+  public void visit(InExp inExp) throws QueryException;
 
-  public void visit(JoinClause joinClause);
+  public void visit(JoinClause joinClause) throws QueryException;
 
-  public void visit(SetClause setClause);
+  public void visit(SetClause setClause) throws QueryException;
 
-  public void visit(SQLFunc sqlFunc);
+  public void visit(SQLFunc sqlFunc) throws QueryException;
 
   public void visit(Constant constant);
 
-  public void visit(SelectQuery query);
+  public void visit(SelectQuery query) throws QueryException;
 
-  public void visit(UpdateQuery updateQuery);
+  public void visit(UpdateQuery updateQuery) throws QueryException;
 
-  public void visit(InsertQuery insertQuery);
+  public void visit(InsertQuery insertQuery) throws QueryException;
 
-  public void visit(DeleteQuery deleteQuery);
-
-  public void accept(Nullable nullable);
+  public void visit(DeleteQuery deleteQuery) throws QueryException;
 }

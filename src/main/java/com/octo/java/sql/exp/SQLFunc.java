@@ -19,6 +19,7 @@
  */
 package com.octo.java.sql.exp;
 
+import com.octo.java.sql.query.QueryException;
 import com.octo.java.sql.query.visitor.QueryVisitor;
 import com.octo.java.sql.query.visitor.Visitable;
 
@@ -45,7 +46,7 @@ public class SQLFunc implements Visitable {
     return this;
   }
 
-  public void accept(final QueryVisitor visitor) {
+  public void accept(final QueryVisitor visitor) throws QueryException {
     visitor.visit(this);
   }
 

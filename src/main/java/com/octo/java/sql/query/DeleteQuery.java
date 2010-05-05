@@ -30,7 +30,7 @@ public class DeleteQuery extends Query<DeleteQuery> {
     this.tables = tables;
   }
 
-  public void accept(final QueryVisitor visitor) {
+  public void accept(final QueryVisitor visitor) throws QueryException {
     visitor.visit(this);
   }
 

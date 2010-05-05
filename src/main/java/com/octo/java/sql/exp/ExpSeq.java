@@ -19,6 +19,7 @@ package com.octo.java.sql.exp;
 import java.util.Arrays;
 import java.util.List;
 
+import com.octo.java.sql.query.QueryException;
 import com.octo.java.sql.query.QueryGrammarException;
 import com.octo.java.sql.query.visitor.QueryVisitor;
 
@@ -28,15 +29,6 @@ public abstract class ExpSeq extends Exp {
   ExpSeq(final Exp... clauses) {
     super();
     this.clauses = Arrays.asList(clauses);
-  }
-
-  @Override
-  public boolean isValid() {
-    boolean result = false;
-    for (final Exp clause : clauses) {
-      result |= clause.isValid();
-    }
-    return result;
   }
 
   @Override
@@ -76,7 +68,7 @@ public abstract class ExpSeq extends Exp {
     return this;
   }
 
-  public void accept(final QueryVisitor visitor) {
+  public void accept(final QueryVisitor visitor) throws QueryException {
     visitor.visit(this);
   }
 

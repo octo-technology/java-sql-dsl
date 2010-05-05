@@ -24,6 +24,16 @@ import com.octo.java.sql.query.QueryGrammarException;
 import com.octo.java.sql.query.visitor.Visitable;
 
 public abstract class Exp implements Visitable {
+  private boolean valid = true;
+
+  public void invalidate() {
+    valid = false;
+  }
+
+  public boolean isValid() {
+    return valid;
+  }
+
   public AndExp and(final Column andColumn, final Operator andOperator,
       final Object andValue) {
     return new AndExp(this, new OpExp(andColumn, andOperator, andValue));
@@ -140,8 +150,6 @@ public abstract class Exp implements Visitable {
       return applyOperation(op, valueStart);
     }
   }
-
-  public abstract boolean isValid();
 
   public abstract Exp applyOperation(final Operator operator, final Object value)
       throws QueryGrammarException;

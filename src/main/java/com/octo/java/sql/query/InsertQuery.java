@@ -50,7 +50,7 @@ public class InsertQuery extends Query<InsertQuery> {
       return set(column, value);
   }
 
-  public void accept(final QueryVisitor visitor) {
+  public void accept(final QueryVisitor visitor) throws QueryException {
     visitor.visit(this);
   }
 

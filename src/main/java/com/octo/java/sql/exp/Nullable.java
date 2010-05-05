@@ -16,10 +16,7 @@
 
 package com.octo.java.sql.exp;
 
-import com.octo.java.sql.query.visitor.QueryVisitor;
-import com.octo.java.sql.query.visitor.Visitable;
-
-public class Nullable implements Visitable {
+public class Nullable {
   private final Object value;
 
   public Nullable(final Object value) {
@@ -30,12 +27,21 @@ public class Nullable implements Visitable {
     return value;
   }
 
-  public void accept(final QueryVisitor visitor) {
-    visitor.accept(this);
-  }
-
   public boolean isNull() {
     return value == null;
   }
 
+  @Override
+  public boolean equals(final Object obj) {
+    if (obj == null)
+      return false;
+    if (!(obj instanceof Nullable))
+      return false;
+
+    final Nullable otherObj = (Nullable) obj;
+    if (value == null)
+      return otherObj.getValue() == null;
+    else
+      return value.equals(otherObj.getValue());
+  }
 }

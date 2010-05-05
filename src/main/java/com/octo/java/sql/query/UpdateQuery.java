@@ -41,7 +41,7 @@ public class UpdateQuery extends Query<UpdateQuery> {
     return this;
   }
 
-  public void accept(final QueryVisitor visitor) {
+  public void accept(final QueryVisitor visitor) throws QueryException {
     visitor.visit(this);
   }
 

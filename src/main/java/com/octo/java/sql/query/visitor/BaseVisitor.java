@@ -16,8 +16,10 @@
 
 package com.octo.java.sql.query.visitor;
 
+import com.octo.java.sql.query.QueryException;
+
 public abstract class BaseVisitor implements QueryVisitor {
-  public void acceptOrVisitValue(final Object param) {
+  public void acceptOrVisitValue(final Object param) throws QueryException {
     if (param instanceof Visitable)
       ((Visitable) param).accept(this);
     else
