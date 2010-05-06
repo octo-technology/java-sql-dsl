@@ -268,10 +268,6 @@ public class DefaultQueryBuilder extends BaseVisitor {
       else
         result.append(",");
       acceptOrVisitValue(column);
-      // if (column instanceof Visitable)
-      // ((Visitable) column).accept(this);
-      // else
-      // result.append(column);
     }
 
     result.append(" ").append(FROM).append(" ");
