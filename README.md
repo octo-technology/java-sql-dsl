@@ -35,7 +35,7 @@ when the query has been built.
 To get a parameter ``Map<String, Object>``, call the ``getParams()``
 method.
 
-A typical usage with a Spring ``SimpleJDBCTemplate`` might look like
+A typical usage with a Spring ``SimpleJdbcTemplate`` might look like
 this :
         getNamedParameterJdbcTemplate().query(query.toSql(),
         query.getParams(), myRowMapper);
