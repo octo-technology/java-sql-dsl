@@ -17,7 +17,7 @@ combinations of submitted criteria.
 
 Usage
 -----
-1. Instanciating queries
+### Instanciating queries
 
 - A SelectQuery is instanciated with the static method
   ``Query.select(columns/functions/"*")``.
@@ -28,7 +28,7 @@ Usage
 - A DeleteQuery is instanciated with the static method
   ``Query.deleteFrom(table)``.
 
-2. Producing SQL
+### Producing SQL
 
 To get the SQL query as a string, just call the ``toSql()`` method
 when the query has been built.
@@ -40,14 +40,14 @@ this :
         getNamedParameterJdbcTemplate().query(query.toSql(),
         query.getParams(), myRowMapper);
 
-4. Using Columns and Function
+### Using Columns and Function
 
 - Columns must be specified with the ``Query.c(columnName)`` static
   method.
 - Functions must be specified with the ``Query.f(functionName, arg1,
   arg2, ...)`` static method.
 
-5. Using SQL dialects
+### Using SQL dialects
 
 The default SQL dialect is implemented in the ``DefaultQueryBuilder``
 class but other can be written by overriding the necessary ``visit()``
@@ -56,7 +56,7 @@ methods. See the ``OracleQueryBuilder`` for example.
 It is then possible to replace the default query builder with :
         Query.setDefaultQueryBuilder(OracleQueryBuilder.class);
 
-6. Optimizing requests
+### Optimizing requests
 
 By default, the queries are not optimized (ie. filter clauses are not
 removed if the value is null).
@@ -67,7 +67,7 @@ the query visitors :
 Additional visitors are executed just before producing the SQL query
 as a string.
 
-7. Examples
+### Examples
 
 For usage examples, see the unit tests in src/main/test directory. It
 will demonstrate implemented features and how to use it. The whole SQL
