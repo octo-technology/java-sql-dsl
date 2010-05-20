@@ -28,6 +28,7 @@ import com.octo.java.sql.exp.ExpSeq;
 import com.octo.java.sql.exp.InExp;
 import com.octo.java.sql.exp.JavaSQLFunc;
 import com.octo.java.sql.exp.JoinClause;
+import com.octo.java.sql.exp.Nullable;
 import com.octo.java.sql.exp.OpExp;
 import com.octo.java.sql.exp.SQLFunc;
 import com.octo.java.sql.exp.SetClause;
@@ -119,5 +120,9 @@ public class DefaultVisitor extends BaseVisitor {
     final Exp whereClause = deleteQuery.getWhereClause();
     if (whereClause != null)
       whereClause.accept(this);
+  }
+
+  public void visit(final Nullable nullable) throws QueryException {
+    acceptOrVisitValue(nullable.getValue());
   }
 }

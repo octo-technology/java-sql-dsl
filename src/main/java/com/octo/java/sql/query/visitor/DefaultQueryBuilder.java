@@ -48,7 +48,7 @@ import com.octo.java.sql.query.UpdateQuery;
 import com.octo.java.sql.query.SelectQuery.Order;
 
 public class DefaultQueryBuilder extends BaseVisitor {
-  private static final String DEFAULT_BASE_VARIABLE_NAME = "param";
+  public static final String DEFAULT_BASE_VARIABLE_NAME = "param";
   private static final String OPEN_BRACKET = "(";
   private static final String BETWEEN = "BETWEEN";
   private static final String CLOSE_BRACKET = ")";
@@ -113,6 +113,11 @@ public class DefaultQueryBuilder extends BaseVisitor {
       final String variableName = addVariable(value, baseName);
       result.append(":").append(variableName);
     }
+  }
+
+  public void visitValue(final Object value) {
+    final String variableName = addVariable(value, DEFAULT_BASE_VARIABLE_NAME);
+    result.append(":").append(variableName);
   }
 
   protected void buildWhereClause(final Exp whereClause) throws QueryException {
@@ -245,11 +250,6 @@ public class DefaultQueryBuilder extends BaseVisitor {
     }
   }
 
-  public void visitValue(final Object value) {
-    final String variableName = addVariable(value, DEFAULT_BASE_VARIABLE_NAME);
-    result.append(":").append(variableName);
-  }
-
   public void visit(final Constant constant) {
     result.append(constant.getValue());
   }
@@ -363,5 +363,9 @@ public class DefaultQueryBuilder extends BaseVisitor {
     final Exp whereClause = deleteQuery.getWhereClause();
     if ((whereClause != null) && (whereClause.isValid()))
       buildWhereClause(whereClause);
+  }
+
+  public void visit(final Nullable nullable) throws QueryException {
+    acceptOrVisitValue(nullable.getValue());
   }
 }

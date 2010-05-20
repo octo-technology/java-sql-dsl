@@ -16,7 +16,11 @@
 
 package com.octo.java.sql.exp;
 
-public class Nullable {
+import com.octo.java.sql.query.QueryException;
+import com.octo.java.sql.query.visitor.QueryVisitor;
+import com.octo.java.sql.query.visitor.Visitable;
+
+public class Nullable implements Visitable {
   private final Object value;
 
   public Nullable(final Object value) {
@@ -43,5 +47,9 @@ public class Nullable {
       return otherObj.getValue() == null;
     else
       return value.equals(otherObj.getValue());
+  }
+
+  public void accept(final QueryVisitor visitor) throws QueryException {
+    visitor.visit(this);
   }
 }

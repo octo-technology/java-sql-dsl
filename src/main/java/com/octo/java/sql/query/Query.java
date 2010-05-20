@@ -224,7 +224,7 @@ public abstract class Query<T extends Query<T>> implements Visitable {
   }
 
   @SuppressWarnings("unchecked")
-  public T eqNullable(final Object value) throws QueryGrammarException {
+  public T eqOrIsNull(final Object value) throws QueryGrammarException {
     assertWhereClauseIsInitialized("eq");
     whereClause = whereClause.eq(new Nullable(value));
     return (T) this;

@@ -178,10 +178,31 @@ public class SelectQueryTest {
   }
 
   @Test
+  public void testShouldBuildSQLQueryWithOneWhereEqOrIsNullClauseAndNullValue()
+      throws QueryException {
+    final SelectQuery query = select("*").from("table") //
+        .where(c("column")).eqOrIsNull(null);
+
+    assertEquals("SELECT * FROM table WHERE (column IS NULL)", query.toSql());
+    assertEquals(0, query.getParams().size());
+  }
+
+  @Test
+  public void testShouldBuildSQLQueryWithOneWhereEqOrIsNullClauseAndNotNullValue()
+      throws QueryException {
+    final SelectQuery query = select("*").from("table") //
+        .where(c("column")).eqOrIsNull(42);
+
+    assertEquals("SELECT * FROM table WHERE (column = :param1)", query.toSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(42, query.getParams().get("param1"));
+  }
+
+  @Test
   public void testShouldBuildSQLQueryWithOneWhereEqClauseAndANullableNullValue()
       throws QueryException {
     final SelectQuery query = select("*").from("table") //
-        .where(c("column")).eqNullable(null);
+        .where(c("column")).eq(new Nullable(null));
 
     assertEquals("SELECT * FROM table WHERE (column IS NULL)", query.toSql());
     assertEquals(0, query.getParams().size());
@@ -191,11 +212,11 @@ public class SelectQueryTest {
   public void testShouldBuildSQLQueryWithOneWhereEqClauseAndANullableNotNullValue()
       throws QueryException {
     final SelectQuery query = select("*").from("table") //
-        .where(c("column")).eqNullable(42);
+        .where(c("column")).eq(new Nullable(42));
 
-    assertEquals("SELECT * FROM table WHERE (column = :column1)", query.toSql());
+    assertEquals("SELECT * FROM table WHERE (column = :param1)", query.toSql());
     assertEquals(1, query.getParams().size());
-    assertEquals(new Nullable(42), query.getParams().get("column1"));
+    assertEquals(42, query.getParams().get("param1"));
   }
 
   @Test

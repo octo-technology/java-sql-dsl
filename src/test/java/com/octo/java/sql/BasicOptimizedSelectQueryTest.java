@@ -65,7 +65,7 @@ public class BasicOptimizedSelectQueryTest {
   public void testShouldBuildSQLQueryWithOneWhereEqClauseAndANullableNullValue()
       throws QueryException {
     final SelectQuery query = select("*").from("table") //
-        .where(c("column")).eqNullable(null);
+        .where(c("column")).eqOrIsNull(null);
 
     assertEquals("SELECT * FROM table WHERE (column IS NULL)", query.toSql());
     assertEquals(0, query.getParams().size());
